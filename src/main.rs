@@ -106,7 +106,7 @@ fn test_class() {
 
 #[derive(Debug)]
 struct Classifer {
-    list: Vec<Box<Class>>,
+    list: Vec<Class>,
     ncls_dist: f32,
 }
 
@@ -116,30 +116,28 @@ impl Classifer {
     }
 
     pub fn classificate(&mut self, m: &Measure) {
-        if self.list.len() > 0 {
+        {
             let mut min_dist = std::f32::MAX;
-            let mut near_cls = self.list[0].clone();
+            let mut near_cls = None;
 
-            for i in self.list.iter() {
+            for i in self.list.iter_mut() {
                 let d = m.dist(&i.mean);
                 if d < min_dist {
                     min_dist = d;
-                    near_cls = i.clone();
+                    near_cls = Some(i);
                 }
             }
 
             if min_dist < self.ncls_dist {
-                near_cls.append(m);
-            } else {
-                self.list.push(Box::new(Class::new(m)));
+                near_cls.unwrap().append(m);
+                return;
             }
-        } else {
-            self.list.push(Box::new(Class::new(m)));
         }
+        self.list.push(Class::new(m));
     }
 
     pub fn merge_classes(&mut self) {
-        let mut uniq: Vec<Box<Class>> = Vec::new();
+        let mut uniq: Vec<Class> = Vec::new();
 
         for cls in self.list.iter() {
             let mut is_uniq = true;
