@@ -15,31 +15,31 @@ struct Measure {
 }
 
 impl Measure {
-	pub fn new(x: f32, y: f32) -> Measure {
-		Measure { x: x, y: y }
-	}
+    pub fn new(x: f32, y: f32) -> Measure {
+        Measure { x: x, y: y }
+    }
 
-	pub fn dist(&self, to: &Self) -> f32 {
-		let a = self.x - to.x;
-		let b = self.y - to.y;
-		f32::sqrt(a * a + b * b)
-	}
+    pub fn dist(&self, to: &Self) -> f32 {
+        let a = self.x - to.x;
+        let b = self.y - to.y;
+        f32::sqrt(a * a + b * b)
+    }
 }
 
 impl Add for Measure {
-	type Output = Measure;
+    type Output = Measure;
 
-	fn add(self, rhs: Measure) -> Measure {
-		Measure::new(self.x + rhs.x, self.y + rhs.y)
-	}
+    fn add(self, rhs: Measure) -> Measure {
+        Measure::new(self.x + rhs.x, self.y + rhs.y)
+    }
 }
 
 impl Sub for Measure {
-	type Output = Measure;
+    type Output = Measure;
 
-	fn sub(self, rhs: Measure) -> Measure {
-		Measure::new(self.x - rhs.x, self.y - rhs.y)
-	}
+    fn sub(self, rhs: Measure) -> Measure {
+        Measure::new(self.x - rhs.x, self.y - rhs.y)
+    }
 }
 
 impl Mul<f32> for Measure {
@@ -79,19 +79,19 @@ struct Class {
 }
 
 impl Class {
-	pub fn new(m: &Measure) -> Class {
-		Class { mean: m.clone(), n: 1 }
-	}
+    pub fn new(m: &Measure) -> Class {
+        Class { mean: m.clone(), n: 1 }
+    }
 
-	pub fn append(&mut self, m: &Measure) {
-		self.mean = ( self.mean * self.n as f32 + *m ) / ( self.n + 1 ) as f32;
-		self.n += 1;
-	}
+    pub fn append(&mut self, m: &Measure) {
+        self.mean = ( self.mean * self.n as f32 + *m ) / ( self.n + 1 ) as f32;
+        self.n += 1;
+    }
 
-	pub fn merge(&mut self, m: &Class) {
-		self.mean = (self.mean * self.n as f32 + m.mean * m.n as f32) / (self.n + m.n) as f32;
+    pub fn merge(&mut self, m: &Class) {
+        self.mean = (self.mean * self.n as f32 + m.mean * m.n as f32) / (self.n + m.n) as f32;
         self.n += m.n;
-	}
+    }
 }
 
 #[test]
@@ -111,96 +111,96 @@ struct Classifer {
 }
 
 impl Classifer {
-	pub fn new(mdist: f32) -> Classifer {
-		Classifer { ncls_dist: mdist, list: Vec::new() }
-	}
+    pub fn new(mdist: f32) -> Classifer {
+        Classifer { ncls_dist: mdist, list: Vec::new() }
+    }
 
-	pub fn classificate(&mut self, m: &Measure) {
-		if self.list.len() > 0 {
-			let mut min_dist = std::f32::MAX;
-			let mut near_cls = self.list[0].clone();
+    pub fn classificate(&mut self, m: &Measure) {
+        if self.list.len() > 0 {
+            let mut min_dist = std::f32::MAX;
+            let mut near_cls = self.list[0].clone();
 
-			for i in self.list.iter() {
-				let d = m.dist(&i.mean);
-				if d < min_dist {
-					min_dist = d;
-					near_cls = i.clone();
-				}
-			}
+            for i in self.list.iter() {
+                let d = m.dist(&i.mean);
+                if d < min_dist {
+                    min_dist = d;
+                    near_cls = i.clone();
+                }
+            }
 
-			if min_dist < self.ncls_dist {
-				near_cls.append(m);
-			} else {
-				self.list.push(Box::new(Class::new(m)));
-			}
-		} else {
-			self.list.push(Box::new(Class::new(m)));
-		}
-	}
+            if min_dist < self.ncls_dist {
+                near_cls.append(m);
+            } else {
+                self.list.push(Box::new(Class::new(m)));
+            }
+        } else {
+            self.list.push(Box::new(Class::new(m)));
+        }
+    }
 
-	pub fn merge_classes(&mut self) {
-		let mut uniq: Vec<Box<Class>> = Vec::new();
+    pub fn merge_classes(&mut self) {
+        let mut uniq: Vec<Box<Class>> = Vec::new();
 
-		for cls in self.list.iter() {
-			let mut is_uniq = true;
+        for cls in self.list.iter() {
+            let mut is_uniq = true;
 
-			for trg in uniq.iter_mut() {
-				if cls.mean.dist(&trg.mean) < self.ncls_dist {
+            for trg in uniq.iter_mut() {
+                if cls.mean.dist(&trg.mean) < self.ncls_dist {
                     trg.merge(cls);
                     is_uniq = false;
                 }
 
-				if !is_uniq {
-					break;
-				}
-			}
+                if !is_uniq {
+                    break;
+                }
+            }
 
-			if is_uniq {
-				uniq.push(cls.clone());
-			}
-		}
+            if is_uniq {
+                uniq.push(cls.clone());
+            }
+        }
 
-		self.list = uniq;
-	}
+        self.list = uniq;
+    }
 }
 
 fn read_measures_from_file(path: &str) -> Vec<Measure> {
-	let mut res = Vec::new();
+    let mut res = Vec::new();
 
-	let mut file = File::open(path).unwrap();
-	let mut text = String::new();
-	assert!(file.read_to_string(&mut text).is_ok());
+    let mut file = File::open(path).unwrap();
+    let mut text = String::new();
+    assert!(file.read_to_string(&mut text).is_ok());
 
-	for line in text.lines() {
-		let values: Vec<&str> = line.split_whitespace().take(2).collect();
-		let x = values[0].parse::<f32>().unwrap();
-		let y = values[1].parse::<f32>().unwrap();
-		res.push(Measure::new(x, y));
-	}
+    for line in text.lines() {
+        let values: Vec<&str> = line.split_whitespace().take(2).collect();
+        let x = values[0].parse::<f32>().unwrap();
+        let y = values[1].parse::<f32>().unwrap();
+        res.push(Measure::new(x, y));
+    }
 
-	return res;
+    return res;
 }
 
 fn main() {
-	let mut args = env::args();
+    let mut args = env::args();
     let measures = read_measures_from_file( &args.nth(1).expect("Need argument: `input file`") );
 
-	let start = PreciseTime::now();
+    let start = PreciseTime::now();
 
-	let mut clsf = Classifer::new(3.0);
+    let mut clsf = Classifer::new(3.0);
 
-	for i in measures.iter() {
-		clsf.classificate(i);
-	}
+    for i in measures.iter() {
+        clsf.classificate(i);
+    }
 
-	if cfg!(feature = "merge") {
-		clsf.merge_classes();
-	}
+    if cfg!(feature = "merge") {
+        clsf.merge_classes();
+    }
 
-	let duration = start.to(PreciseTime::now());
-	println!("work time: {}", duration);
+    let duration = start.to(PreciseTime::now());
+    println!("work time: {}", duration);
 
-	for i in clsf.list.iter() {
-		println!("[{}, {}]: {}", i.mean.x, i.mean.y, i.n);
-	}
+    for i in clsf.list.iter() {
+        println!("[{}, {}]: {}", i.mean.x, i.mean.y, i.n);
+    }
 }
